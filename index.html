@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backlink Keyword Finder</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px; 
+            background-image: url('https://wallpapers.com/images/featured/hello-kitty-aesthetic-background-nux8p0k0es4c5tgn.jpg');
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #df3096;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #851b77;
+        }
+        .result {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Backlink Keyword Finder</h1>
+    
+    <label for="keyword">Nhập từ khóa chính cần tìm:</label>
+    <input type="text" id="keyword" placeholder="Nhập từ khóa chính..." />
+    
+    <label for="keyword2">Nhập từ khóa phụ 1:</label>
+    <input type="text" id="keyword2" placeholder="Nhập từ khóa phụ 1..." />
+    
+    <label for="keyword3">Nhập từ khóa phụ 2:</label>
+    <input type="text" id="keyword3" placeholder="Nhập từ khóa phụ 2..." />
+    
+    <label for="backlinks">Nhập danh sách các liên kết backlink (mỗi liên kết trên một dòng):</label>
+    <textarea id="backlinks" rows="5" placeholder="https://example.com&#10;https://another-example.com"></textarea>
+    
+    <button onclick="searchKeywords()">Tìm kiếm</button>
+    
+    <div class="result" id="result"></div>
+</div>
+
+<script>
+  async function searchKeywords() {
+    const keyword1 = document.getElementById('keyword').value;
+    const keyword2 = document.getElementById('keyword2').value;
+    const keyword3 = document.getElementById('keyword3').value;
+    const backlinks = document.getElementById('backlinks').value.split('\n');
+    const resultDiv = document.getElementById('result');
+    resultDiv.innerHTML = '';  // Clear the result area before each search
+
+    if (!keyword1 && !keyword2 && !keyword3) {
+        resultDiv.innerHTML = '<p>Vui lòng nhập ít nhất một từ khóa và danh sách backlink.</p>';
+        return;
+    }
+
+    resultDiv.innerHTML = '<p>Đang tìm kiếm từ khóa trong các liên kết...</p>';
+
+    let foundCount = 0;
+    let notFoundCount = 0;
+
+    for (let link of backlinks) {
+        if (link.trim()) {
+            try {
+                const response = await fetch('http://localhost:3000/fetch-url', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: link.trim() })
+                });
+
+                const data = await response.json();
+                let found = false;
+                
+                // Check for all keywords
+                if (data.html && 
+                    (data.html.toLowerCase().includes(keyword1.toLowerCase()) || 
+                    data.html.toLowerCase().includes(keyword2.toLowerCase()) ||
+                    data.html.toLowerCase().includes(keyword3.toLowerCase()))) {
+                    found = true;
+                }
+
+                if (found) {
+                    resultDiv.innerHTML += `<p>Từ khóa được tìm thấy trong liên kết: <a href="${link}" target="_blank">${link}</a></p>`;
+                    foundCount++;
+                } else {
+                    resultDiv.innerHTML += `<p>Không tìm thấy từ khóa trong liên kết: <a href="${link}" target="_blank">${link}</a></p>`;
+                    notFoundCount++;
+                }
+            } catch (error) {
+                resultDiv.innerHTML += `<p>Không thể truy cập vào liên kết: <a href="${link}" target="_blank">${link}</a></p>`;
+                notFoundCount++;  // Count as not found if unable to access the link
+            }
+        }
+    }
+
+    // Show total results
+    resultDiv.innerHTML += `<hr><p><strong>Kết quả:</strong></p>`;
+    resultDiv.innerHTML += `<p>Số liên kết chứa từ khóa: <strong>${foundCount}</strong></p>`;
+    resultDiv.innerHTML += `<p>Số liên kết không chứa từ khóa: <strong>${notFoundCount}</strong></p>`;
+
+    // Scroll to the result area after search completes
+    resultDiv.scrollIntoView({ behavior: 'smooth' });
+  }
+</script>
+
+</body>
+</html>
